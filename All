@@ -1,0 +1,61 @@
+int contact1;
+int contact2;
+
+int flex1_pin;
+int flex2_pin;
+int flex3_pin;
+int flex4_pin;
+int flex5_pin;
+
+float flex1;
+float flex2;
+float flex3;
+float flex4;
+float flex5;
+
+void setup() {
+  Serial.begin(9600);
+  
+  pinMode(12, INPUT);
+  pinMode(11, INPUT);
+
+  pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
+  pinMode(A3, INPUT);
+  pinMode(A6, INPUT);
+  pinMode(A7, INPUT);
+}
+
+void loop() {
+  contact1 = digitalRead(12);
+  contact2 = digitalRead(11);
+
+  flex1_pin = analogRead(A1);
+  flex1 = (flex1_pin * 5.0) / 1023.0; // Correctly converts to voltage
+  flex2_pin = analogRead(A2);
+  flex2 = (flex2_pin * 5.0) / 1023.0; // Correct calculation
+  flex3_pin = analogRead(A3);
+  flex3 = (flex3_pin * 5.0) / 1023.0; // Correct calculation
+  flex4_pin = analogRead(A6);
+  flex4 = (flex4_pin * 5.0) / 1023.0; // Correct calculation
+  flex5_pin = analogRead(A7);
+  flex5 = (flex5_pin * 5.0) / 1023.0; // Correct calculation
+
+
+  Serial.println("Flex 1, Flex 2, Flex 3, Flex 4, Flex 5, Contact 1, Contact 2");
+  Serial.print(flex1);
+  Serial.print("  ");
+  Serial.print(flex2);
+  Serial.print("  ");
+  Serial.print(flex3);
+  Serial.print("  ");
+  Serial.print(flex4);
+  Serial.print("  ");
+  Serial.print(flex5);
+  Serial.print("  ");
+  Serial.print(contact1);
+  Serial.print("  ");
+  Serial.print(contact2);
+  Serial.print("  ");
+  Serial.println("");
+}
