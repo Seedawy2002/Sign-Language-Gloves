@@ -124,7 +124,6 @@ MPU6050 mpu;
 
 
 #define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
-#define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
 bool blinkState = false;
 
 // MPU control/status vars
@@ -166,6 +165,20 @@ void dmpDataReady() {
 const int rxPin = 2;  // RX pin of Arduino Nano connected to TX pin of ESP8266
 const int txPin = 3;  // TX pin of Arduino Nano connected to RX pin of ESP8266
 SoftwareSerial espSerial(rxPin, txPin); // Create a SoftwareSerial object
+int contact1;
+int contact2;
+
+int flex1_pin;
+int flex2_pin;
+int flex3_pin;
+int flex4_pin;
+int flex5_pin;
+
+float flex1;
+float flex2;
+float flex3;
+float flex4;
+float flex5;
 
 void sendGyroToESP() {
   mpu.dmpGetQuaternion(&q, fifoBuffer);
@@ -176,6 +189,51 @@ void sendGyroToESP() {
   espSerial.print(euler[1] * 180/M_PI);
   espSerial.print("\t");
   espSerial.println(euler[2] * 180/M_PI);
+}
+
+void sensor_readings() {
+  mpu.dmpGetQuaternion(&q, fifoBuffer);
+  mpu.dmpGetEuler(euler, &q);
+            
+  contact1 = digitalRead(12);
+  contact2 = digitalRead(11);
+
+  flex1_pin = analogRead(A1);
+  flex1 = (flex1_pin * 5.0) / 1023.0; // Correctly converts to voltage
+  flex2_pin = analogRead(A2);
+  flex2 = (flex2_pin * 5.0) / 1023.0; // Correct calculation
+  flex3_pin = analogRead(A3);
+  flex3 = (flex3_pin * 5.0) / 1023.0; // Correct calculation
+  flex4_pin = analogRead(A6);
+  flex4 = (flex4_pin * 5.0) / 1023.0; // Correct calculation
+  flex5_pin = analogRead(A7);
+  flex5 = (flex5_pin * 5.0) / 1023.0; // Correct calculation
+
+
+  Serial.println("Flex 1, Flex 2, Flex 3, Flex 4, Flex 5, Contact 1, Contact 2, X, Y, Z");
+  Serial.print(flex1);
+  Serial.print("  ");
+  Serial.print(flex2);
+  Serial.print("  ");
+  Serial.print(flex3);
+  Serial.print("  ");
+  Serial.print(flex4);
+  Serial.print("  ");
+  Serial.print(flex5);
+  Serial.print("  ");
+  Serial.print(contact1);
+  Serial.print("  ");
+  Serial.print(contact2);
+  Serial.print("  ");
+  Serial.print(euler[0] * 180/M_PI);
+  Serial.print("  ");
+  Serial.print(euler[1] * 180/M_PI);
+  Serial.print("  ");
+  Serial.println(euler[2] * 180/M_PI);
+  Serial.println("");
+
+  String output = String(euler[0] * 180/M_PI) + "," + String(euler[1] * 180/M_PI) + "," + String(euler[2] * 180/M_PI) + "," + String(flex1) + "," + String(flex2) + "," + String(flex3) + "," + String(flex4) + "," + String(flex5) + "," + String(contact1) + "," + String(contact2);
+  espSerial.println(output);
 }
 
 void setup() {
@@ -259,7 +317,14 @@ void setup() {
     }
 
     // configure LED for output
-    pinMode(LED_PIN, OUTPUT);
+    pinMode(12, INPUT);
+    pinMode(11, INPUT);
+
+    pinMode(A1, INPUT);
+    pinMode(A2, INPUT);
+    pinMode(A3, INPUT);
+    pinMode(A6, INPUT);
+    pinMode(A7, INPUT);
 }
 
 
@@ -288,15 +353,8 @@ void loop() {
 
         #ifdef OUTPUT_READABLE_EULER
             // display Euler angles in degrees
-            mpu.dmpGetQuaternion(&q, fifoBuffer);
-            mpu.dmpGetEuler(euler, &q);
-            Serial.print("euler\t");
-            Serial.print(euler[0] * 180/M_PI);
-            Serial.print("\t");
-            Serial.print(euler[1] * 180/M_PI);
-            Serial.print("\t");
-            Serial.println(euler[2] * 180/M_PI);
-            sendGyroToESP();
+            sensor_readings();
+            // sendGyroToESP();
         #endif
 
         #ifdef OUTPUT_READABLE_YAWPITCHROLL
@@ -356,8 +414,5 @@ void loop() {
             teapotPacket[11]++; // packetCount, loops at 0xFF on purpose
         #endif
 
-        // blink LED to indicate activity
-        blinkState = !blinkState;
-        digitalWrite(LED_PIN, blinkState);
     }
 }
