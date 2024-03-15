@@ -71,55 +71,68 @@ struct sensors_data {
   int contact2;
 };
 
-struct sensors_data parseInput(String input_str){
-    const int NUM_OF_VARS = 10;
-    float values[NUM_OF_VARS]; // Assuming there are ten float values separated by commas
-    sensors_data output;
-    int i = 0;
-    char* value = strtok(const_cast<char*>(input_str.c_str()), ",");
-    while (value != NULL && i < NUM_OF_VARS) {
-      values[i++] = atof(value);
-      value = strtok(NULL, ",");
+String receivedData;
+struct sensors_data output;
+
+void parseInput(String input_str){
+
+    if (input_str.indexOf('x') != -1) {
+      // Append packet to receivedData
+        receivedData += input_str.substring(0, input_str.indexOf('x'));
+       
+        // Process receivedData
+        const int NUM_OF_VARS = 10;
+        float values[NUM_OF_VARS]; // Assuming there are ten float values separated by commas
+        int i = 0;
+        char* value = strtok(const_cast<char*>(receivedData.c_str()), ",");
+        while (value != NULL && i < NUM_OF_VARS) {
+          values[i++] = atof(value);
+          value = strtok(NULL, ",");
+        }
+
+        // Print parsed data
+          output.gyro_x = values[0];
+          output.gyro_y = values[1];
+          output.gyro_z = values[2];
+
+          output.flex1 = values[3];
+          output.flex2 = values[4];
+          output.flex3 = values[5];
+          output.flex4 = values[6];
+          output.flex5 = values[7];
+
+          output.contact1 = ceil(values[8]);
+          output.contact2 = ceil(values[9]);
+
+          // Serial Output
+          Serial.print(String(output.gyro_x));
+          Serial.print('\t');
+          Serial.print(String(output.gyro_y));
+          Serial.print('\t');
+          Serial.print(String(output.gyro_z));
+          Serial.print('\t');
+          Serial.print(String(output.flex1));
+          Serial.print('\t');
+          Serial.print(String(output.flex2));
+          Serial.print('\t');
+          Serial.print(String(output.flex3));
+          Serial.print('\t');
+          Serial.print(String(output.flex4));
+          Serial.print('\t');
+          Serial.print(String(output.flex5));
+          Serial.print('\t');
+          Serial.print(String(output.contact1));
+          Serial.print('\t');
+          Serial.println(String(output.contact2));
+
+          // Reset receivedData for next transmission
+          receivedData = "";
+      } else {
+        // Append packet to receivedData
+        receivedData += input_str;
     }
-
-    // Print parsed data
-    // Flex
-      output.gyro_x = values[0];
-      output.gyro_y = values[1];
-      output.gyro_z = values[2];
-
-      output.flex1 = values[3];
-      output.flex2 = values[4];
-      output.flex3 = values[5];
-      output.flex4 = values[6];
-      output.flex5 = values[7];
-
-      output.contact1 = ceil(values[8]);
-      output.contact2 = ceil(values[9]);
-
-      Serial.print(String(output.gyro_x));
-      Serial.print('\t');
-      Serial.print(String(output.gyro_y));
-      Serial.print('\t');
-      Serial.print(String(output.gyro_z));
-      Serial.print('\t');
-      Serial.print(String(output.flex1));
-      Serial.print('\t');
-      Serial.print(String(output.flex2));
-      Serial.print('\t');
-      Serial.print(String(output.flex3));
-      Serial.print('\t');
-      Serial.print(String(output.flex4));
-      Serial.print('\t');
-      Serial.print(String(output.flex5));
-      Serial.print('\t');
-      Serial.print(String(output.contact1));
-      Serial.print('\t');
-      Serial.println(String(output.contact2));
-      return output;
 }
 
-struct sensors_data s_data;
 
 void setup() {
   Serial.begin(115200);
@@ -186,7 +199,7 @@ void setup() {
     //   SPISlave.setData("Say what?");
     // }
     // Serial.println((char *)data);
-    s_data = parseInput(message);
+    parseInput(message);
 
   });
 
@@ -212,18 +225,18 @@ void loop() {
     JsonArray gyros = doc.createNestedArray("gyros");
     JsonObject gyro = gyros.createNestedObject();
     
-    gyro["x"] = s_data.gyro_x;
-    gyro["y"] = s_data.gyro_y;
-    gyro["z"] = s_data.gyro_z;
+    gyro["x"] = output.gyro_x;
+    gyro["y"] = output.gyro_y;
+    gyro["z"] = output.gyro_z;
 
-    gyro["flex1"] = s_data.flex1;
-    gyro["flex2"] = s_data.flex2;
-    gyro["flex3"] = s_data.flex3;
-    gyro["flex4"] = s_data.flex4;
-    gyro["flex5"] = s_data.flex5;
+    gyro["flex1"] = output.flex1;
+    gyro["flex2"] = output.flex2;
+    gyro["flex3"] = output.flex3;
+    gyro["flex4"] = output.flex4;
+    gyro["flex5"] = output.flex5;
 
-    gyro["contact1"] = s_data.contact1;
-    gyro["contact2"] = s_data.contact2;
+    gyro["contact1"] = output.contact1;
+    gyro["contact2"] = output.contact2;
 
     serializeJson(doc, jsonStr); 
 

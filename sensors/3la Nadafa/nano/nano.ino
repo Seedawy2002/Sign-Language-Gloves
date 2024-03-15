@@ -42,7 +42,6 @@ float gyro_x;
 float gyro_y;
 float gyro_z;
 
-
 const setup_pins() {
     pinMode(FLEX1_PIN, INPUT);
     pinMode(FLEX2_PIN, INPUT);
@@ -50,10 +49,10 @@ const setup_pins() {
     pinMode(FLEX4_PIN, INPUT);
     pinMode(FLEX5_PIN, INPUT);
 
-
     pinMode(CONTACT1_PIN, INPUT);
     pinMode(CONTACT2_PIN, INPUT);
 }
+
 const read_sensors() {
   flex1_reading = analogRead(FLEX1_PIN);
   flex2_reading = analogRead(FLEX2_PIN);
@@ -61,13 +60,11 @@ const read_sensors() {
   flex4_reading = analogRead(FLEX4_PIN);
   flex5_reading = analogRead(FLEX5_PIN);
 
-
   flex1 = (flex1_reading * 5.0) / 1023.0;
   flex2 = (flex2_reading * 5.0) / 1023.0;
   flex3 = (flex3_reading * 5.0) / 1023.0;
   flex4 = (flex4_reading * 5.0) / 1023.0;
   flex5 = (flex5_reading * 5.0) / 1023.0;
-
 
   contact1 = digitalRead(CONTACT1_PIN);
   contact2 = digitalRead(CONTACT2_PIN);
@@ -82,9 +79,6 @@ uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 Quaternion q;           // [w, x, y, z]         quaternion container
 float euler[3];         // [psi, theta, phi]    Euler angle container
-
-
-
 
 void setup_mpu(){
   #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -140,9 +134,6 @@ private:
     delayMicroseconds(5);
     digitalWrite(_ss_pin, LOW);
   }
-
-
-
 
 public:
   ESPSafeMaster(uint8_t pin)
@@ -211,10 +202,23 @@ ESPSafeMaster esp(SS);
 
 
 void send_to_esp(String data) {
-  const char *message = data.c_str();
-  esp.writeData(message);
-  Serial.println(message);
-  delay(10); // Essential delay
+  const int chunkSize = 32;
+    for (int i = 0; i < data.length(); i += chunkSize) {
+        String chunk = data.substring(i, min(i + chunkSize, data.length()));
+        // Check if this is the last chunk
+        if (i + chunkSize >= data.length()) {
+            chunk += 'x'; // Append 'x' to indicate new line
+        }
+        const char *message = chunk.c_str();
+        esp.writeData(message);
+        Serial.println(message);
+    }
+    Serial.println(data);
+    delay(10); // Essential delay
+  // const char *message = data.c_str();
+  // esp.writeData(message);
+  // Serial.println(message);
+  // delay(10); // Essential delay
 }
 
 
