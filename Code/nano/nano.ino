@@ -215,9 +215,8 @@ void send_to_esp(String data) {
         }
         const char *message = chunk.c_str();
         esp.writeData(message);
-        Serial.println(message);
+        Serial.println(data);
     }
-    Serial.println(data);
     delay(10); // Essential delay
   // const char *message = data.c_str();
   // esp.writeData(message);
