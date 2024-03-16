@@ -16,8 +16,9 @@ const int FLEX4_PIN = A6;
 const int FLEX5_PIN = A7;
 
 
-const int CONTACT1_PIN = 3;
-const int CONTACT2_PIN = 4;
+const int CONTACT1_PIN = 2;
+const int CONTACT2_PIN = 3;
+const int CONTACT3_PIN = 4;
 
 
 int flex1_reading;
@@ -36,12 +37,12 @@ float flex5;
 
 int contact1;
 int contact2;
+int contact3;
 
 
 float gyro_x;
 float gyro_y;
 float gyro_z;
-
 
 const setup_pins() {
     pinMode(FLEX1_PIN, INPUT);
@@ -50,10 +51,11 @@ const setup_pins() {
     pinMode(FLEX4_PIN, INPUT);
     pinMode(FLEX5_PIN, INPUT);
 
-
     pinMode(CONTACT1_PIN, INPUT);
     pinMode(CONTACT2_PIN, INPUT);
+    pinMode(CONTACT3_PIN, INPUT);
 }
+
 const read_sensors() {
   flex1_reading = analogRead(FLEX1_PIN);
   flex2_reading = analogRead(FLEX2_PIN);
@@ -61,16 +63,15 @@ const read_sensors() {
   flex4_reading = analogRead(FLEX4_PIN);
   flex5_reading = analogRead(FLEX5_PIN);
 
-
   flex1 = (flex1_reading * 5.0) / 1023.0;
   flex2 = (flex2_reading * 5.0) / 1023.0;
   flex3 = (flex3_reading * 5.0) / 1023.0;
   flex4 = (flex4_reading * 5.0) / 1023.0;
   flex5 = (flex5_reading * 5.0) / 1023.0;
 
-
   contact1 = digitalRead(CONTACT1_PIN);
   contact2 = digitalRead(CONTACT2_PIN);
+  contact3 = digitalRead(CONTACT3_PIN);
 }
 // ======================================
 //                 MPU
@@ -82,9 +83,6 @@ uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 Quaternion q;           // [w, x, y, z]         quaternion container
 float euler[3];         // [psi, theta, phi]    Euler angle container
-
-
-
 
 void setup_mpu(){
   #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -140,9 +138,6 @@ private:
     delayMicroseconds(5);
     digitalWrite(_ss_pin, LOW);
   }
-
-
-
 
 public:
   ESPSafeMaster(uint8_t pin)
@@ -211,10 +206,23 @@ ESPSafeMaster esp(SS);
 
 
 void send_to_esp(String data) {
-  const char *message = data.c_str();
-  esp.writeData(message);
-  Serial.println(message);
-  delay(10); // Essential delay
+  const int chunkSize = 32;
+    for (int i = 0; i < data.length(); i += chunkSize) {
+        String chunk = data.substring(i, min(i + chunkSize, data.length()));
+        // Check if this is the last chunk
+        if (i + chunkSize >= data.length()) {
+            chunk += 'x'; // Append 'x' to indicate new line
+        }
+        const char *message = chunk.c_str();
+        esp.writeData(message);
+        Serial.println(message);
+    }
+    Serial.println(data);
+    delay(10); // Essential delay
+  // const char *message = data.c_str();
+  // esp.writeData(message);
+  // Serial.println(message);
+  // delay(10); // Essential delay
 }
 
 
@@ -234,11 +242,11 @@ void setup() {
 
 String concat_vars(float gyro_x, float gyro_y, float gyro_z,
                     float flex1, float flex2, float flex3, float flex4, float flex5,
-                    int contact1, int contact2) {
+                    int contact1, int contact2, int contact3) {
   return String(gyro_x) + "," + String(gyro_y) + "," + String(gyro_z) + "," +
          String(flex1) + "," + String(flex2) + "," + String(flex3) + "," +
          String(flex4) + "," + String(flex5) + "," + String(contact1) + "," +
-         String(contact2);
+         String(contact2) + "," + String(contact3);
 }
 
 
@@ -260,7 +268,7 @@ void loop() {
             gyro_x = euler[0] * 180/M_PI;
             gyro_y = euler[1] * 180/M_PI;
             gyro_z = euler[2] * 180/M_PI;
-            String data = concat_vars(gyro_x, gyro_y, gyro_z, flex1, flex2, flex3, flex4, flex5, contact1, contact2);
+            String data = concat_vars(gyro_x, gyro_y, gyro_z, flex1, flex2, flex3, flex4, flex5, contact1, contact2, contact3);
             send_to_esp(data);
     }
    
